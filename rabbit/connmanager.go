@@ -125,7 +125,6 @@ func (cp *connManager) CloseConnection(conn *amqp.Connection) {
 }
 
 func (cp *connManager) CloseConsumerChannel(channel *amqp.Channel) {
-
 	go func() {
 		if channel == nil {
 			return
