@@ -84,7 +84,9 @@ reconnectLoop:
 
 		var callback = func(err error) {
 			if err != nil {
-				infralog.Error("callback error", zap.Error(err))
+				infralog.Error("callback error",
+					zap.String("queue", cfg.Queue),
+					zap.Error(err))
 				isNeedRecreateChannel.Store(true)
 			}
 			c.itemsInProgress.Done()
@@ -94,7 +96,9 @@ reconnectLoop:
 			select {
 			case closeErr, isOpen := <-connClose:
 				if closeErr != nil {
-					infralog.Error("rabbit consumer connection error", zap.Error(closeErr))
+					infralog.Error("rabbit consumer connection error",
+						zap.String("queue", cfg.Queue),
+						zap.Error(closeErr))
 				}
 
 				if closeErr != nil || !isOpen {
@@ -104,7 +108,9 @@ reconnectLoop:
 				}
 			case closeErr, isOpen := <-channelClose:
 				if closeErr != nil {
-					infralog.Error("rabbit consumer channel error", zap.Error(closeErr))
+					infralog.Error("rabbit consumer channel error",
+						zap.String("queue", cfg.Queue),
+						zap.Error(closeErr))
 				}
 
 				if closeErr != nil || !isOpen {
@@ -116,6 +122,9 @@ reconnectLoop:
 				if time.Since(lastTimeConnectionUsed) > heartbeatReconnectionInterval || isNeedRecreateChannel.Load() {
 					infralog.Error("heartbeatTicker.C",
 						zap.Error(errors.New("heartbeatTicker.C")),
+						zap.Duration("lastTimeConnectionUsed duration", time.Since(lastTimeConnectionUsed)),
+						zap.Time("lastTimeConnectionUsed", lastTimeConnectionUsed),
+						zap.String("queue", cfg.Queue),
 						zap.Bool("isNeedRecreateChannel", isNeedRecreateChannel.Load()))
 					connectionsManager.CloseConsumerChannel(channel)
 					continue reconnectLoop
