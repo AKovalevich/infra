@@ -108,6 +108,7 @@ func (cp *connManager) CreateConsumerChannel(
 }
 
 func (cp *connManager) CloseConnection(conn *amqp.Connection) {
+	infralog.Error("connection close", zap.Error(errors.New("consumer close")))
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 
@@ -124,6 +125,8 @@ func (cp *connManager) CloseConnection(conn *amqp.Connection) {
 }
 
 func (cp *connManager) CloseConsumerChannel(channel *amqp.Channel) {
+	infralog.Error("consumer close", zap.Error(errors.New("consumer close")))
+
 	go func() {
 		if channel == nil {
 			return

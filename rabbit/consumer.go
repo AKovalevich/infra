@@ -84,6 +84,7 @@ reconnectLoop:
 
 		var callback = func(err error) {
 			if err != nil {
+				infralog.Error("callback error", zap.Error(err))
 				isNeedRecreateChannel.Store(true)
 			}
 			c.itemsInProgress.Done()
@@ -113,6 +114,9 @@ reconnectLoop:
 				}
 			case <-heartbeatTicker.C:
 				if time.Since(lastTimeConnectionUsed) > heartbeatReconnectionInterval || isNeedRecreateChannel.Load() {
+					infralog.Error("heartbeatTicker.C",
+						zap.Error(errors.New("heartbeatTicker.C")),
+						zap.Bool("isNeedRecreateChannel", isNeedRecreateChannel.Load()))
 					connectionsManager.CloseConsumerChannel(channel)
 					continue reconnectLoop
 				}
