@@ -120,12 +120,14 @@ reconnectLoop:
 				}
 			case <-heartbeatTicker.C:
 				if time.Since(lastTimeConnectionUsed) > heartbeatReconnectionInterval || isNeedRecreateChannel.Load() {
-					infralog.Error("heartbeatTicker.C",
-						zap.Error(errors.New("heartbeatTicker.C")),
-						zap.Duration("lastTimeConnectionUsed duration", time.Since(lastTimeConnectionUsed)),
-						zap.Time("lastTimeConnectionUsed", lastTimeConnectionUsed),
-						zap.String("queue", cfg.Queue),
-						zap.Bool("isNeedRecreateChannel", isNeedRecreateChannel.Load()))
+					if isNeedRecreateChannel.Load() {
+						infralog.Error("heartbeatTicker.C",
+							zap.Error(errors.New("heartbeatTicker.C")),
+							zap.Duration("lastTimeConnectionUsed duration", time.Since(lastTimeConnectionUsed)),
+							zap.Time("lastTimeConnectionUsed", lastTimeConnectionUsed),
+							zap.String("queue", cfg.Queue),
+							zap.Bool("isNeedRecreateChannel", isNeedRecreateChannel.Load()))
+					}
 					connectionsManager.CloseConsumerChannel(channel)
 					continue reconnectLoop
 				}
