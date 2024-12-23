@@ -55,8 +55,6 @@ func (c *Consumer) start() {
 
 reconnectLoop:
 	for !c.isClosed {
-		infralog.Error("connectionsManager.Get",
-			zap.String("queue", cfg.Queue), zap.Error(errors.New("connectionsManager.Get")))
 		conn, isNewConn, err := connectionsManager.Get(c.connCfg, cfg.Tag)
 		if err != nil {
 			infralog.Error("connectionsManager.Get",
@@ -66,8 +64,6 @@ reconnectLoop:
 			continue
 		}
 
-		infralog.Error("connectionsManager.CreateConsumerChannel",
-			zap.String("queue", cfg.Queue), zap.Error(errors.New("connectionsManager.CreateConsumerChannel")))
 		channel, deliveries, err = connectionsManager.CreateConsumerChannel(
 			conn,
 			cfg.Tag,
@@ -111,6 +107,11 @@ reconnectLoop:
 						zap.Error(closeErr))
 				}
 
+				if !isOpen {
+					infralog.Error("rabbit consumer connection NotifyClose channel closed",
+						zap.String("queue", cfg.Queue), zap.Error(errors.New("NotifyClose channel closed")))
+				}
+
 				if closeErr != nil || !isOpen {
 					go readAllErrors(connClose)
 					connectionsManager.CloseConnection(conn)
@@ -121,6 +122,11 @@ reconnectLoop:
 					infralog.Error("rabbit consumer channel error",
 						zap.String("queue", cfg.Queue),
 						zap.Error(closeErr))
+				}
+
+				if !isOpen {
+					infralog.Error("rabbit consumer channel NotifyClose channel closed",
+						zap.String("queue", cfg.Queue), zap.Error(errors.New("NotifyClose channel closed")))
 				}
 
 				if closeErr != nil || !isOpen {
@@ -145,6 +151,9 @@ reconnectLoop:
 				go collectMetrics(cfg, channel, host, cfg.Queue)
 			case msg, isOpen := <-deliveries:
 				if !isOpen {
+					infralog.Error("rabbit consumer deliveries channel is closed",
+						zap.String("queue", cfg.Queue), zap.Error(errors.New("deliveries channel is closed")))
+
 					connectionsManager.CloseConsumerChannel(channel)
 					continue reconnectLoop
 				}
