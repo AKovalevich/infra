@@ -55,12 +55,19 @@ func (c *Consumer) start() {
 
 reconnectLoop:
 	for !c.isClosed {
+		infralog.Error("connectionsManager.Get",
+			zap.String("queue", cfg.Queue), zap.Error(errors.New("connectionsManager.Get")))
 		conn, isNewConn, err := connectionsManager.Get(c.connCfg, cfg.Tag)
 		if err != nil {
+			infralog.Error("connectionsManager.Get",
+				zap.String("queue", cfg.Queue),
+				zap.Error(err))
 			time.Sleep(time.Second) // time to wait to not make infinite "for" loop
 			continue
 		}
 
+		infralog.Error("connectionsManager.CreateConsumerChannel",
+			zap.String("queue", cfg.Queue), zap.Error(errors.New("connectionsManager.CreateConsumerChannel")))
 		channel, deliveries, err = connectionsManager.CreateConsumerChannel(
 			conn,
 			cfg.Tag,
@@ -68,6 +75,9 @@ reconnectLoop:
 			cfg.QueuePriority,
 			cfg.PrefetchCount)
 		if err != nil {
+			infralog.Error("CreateConsumerChannel",
+				zap.String("queue", cfg.Queue),
+				zap.Error(err))
 			connectionsManager.CloseConnection(conn)
 			time.Sleep(time.Second) // time to wait to not make infinite "for" loop
 			continue
